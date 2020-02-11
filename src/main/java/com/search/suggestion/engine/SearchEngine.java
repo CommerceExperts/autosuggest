@@ -1,5 +1,24 @@
 package com.search.suggestion.engine;
 
+import static com.search.suggestion.common.Precondition.checkPointer;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.TreeMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.annotation.Nullable;
+
 import com.search.suggestion.adaptor.IndexAdapter;
 import com.search.suggestion.common.Aggregator;
 import com.search.suggestion.data.Indexable;
@@ -8,16 +27,6 @@ import com.search.suggestion.data.SearchPayload;
 import com.search.suggestion.data.SuggestPayload;
 import com.search.suggestion.text.analyze.Analyzer;
 import com.search.suggestion.text.index.Index;
-
-
-import javax.annotation.Nullable;
-import java.io.Serializable;
-import java.util.*;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import static com.search.suggestion.common.Precondition.checkPointer;
 
 
 /**
@@ -65,7 +74,20 @@ public final class SearchEngine<T extends Indexable> implements Serializable
      */
     public boolean add(T element)
     {
-        return addAll(Arrays.asList(element));
+		boolean result = false;
+		checkPointer(element != null);
+		write.lock();
+		try {
+			for (String field : element.getFields()) {
+				for (String token : analyzer.apply(field)) {
+					result = index.put(token, element);
+				}
+			}
+		}
+		finally {
+			write.unlock();
+		}
+		return result;
     }
 
     /**
@@ -73,31 +95,31 @@ public final class SearchEngine<T extends Indexable> implements Serializable
      *
      * @throws NullPointerException if {@code elements} is null or contains a null element;
      */
-    public boolean addAll(Collection<T> elements)
+	public boolean addAll(Iterable<T> elements)
     {
         checkPointer(elements != null);
         boolean result = false;
         for (T element : elements)
         {
-            checkPointer(element != null);
-            write.lock();
-            try
-            {
-                for (String field : element.getFields())
-                {
-                    for (String token : analyzer.apply(field))
-                    {
-                        result |= index.put(token, element);
-                    }
-                }
-            }
-            finally
-            {
-                write.unlock();
-            }
+			result |= add(element);
         }
         return result;
     }
+
+	/**
+	 * Indexes a stream of elements.
+	 *
+	 * @throws NullPointerException
+	 *         if {@code elements} is null. if a element is null, it will be
+	 *         ignored
+	 */
+	public boolean addAll(Stream<T> elements) {
+		checkPointer(elements != null);
+		return elements.filter(Objects::nonNull)
+				.map(this::add)
+				.collect(Collectors.reducing(Boolean::logicalOr))
+				.orElse(false);
+	}
 
     public TreeMap <Double,List<SuggestPayload>> search(SearchPayload sr, boolean val)
     {
