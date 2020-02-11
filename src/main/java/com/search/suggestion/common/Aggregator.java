@@ -21,13 +21,13 @@ import javax.annotation.Nullable;
 import com.search.suggestion.data.Bucket;
 import com.search.suggestion.data.ScoredObject;
 import com.search.suggestion.data.SearchPayload;
-import com.search.suggestion.data.SuggestPayload;
+import com.search.suggestion.data.Suggestable;
 
 /**
  * Aggregator to collect, merge and transform {@link ScoredObject} elements.
  */
 @SuppressWarnings("unchecked")
-public class Aggregator<T>
+public class Aggregator<T extends Suggestable>
 {
     private final Map<T, Double> scores;
     private final Comparator<ScoredObject<T>> comparator;
@@ -168,18 +168,17 @@ public class Aggregator<T>
     /**
      * Returns a {@link List} of all objects scored, sorted according to the default comparator.
      */
-    public TreeMap <Double,List<SuggestPayload>> values(SearchPayload json, boolean bool)
+	public TreeMap<Double, List<Suggestable>> values(SearchPayload json, boolean bool)
     {
         String bucketKey = json.getFirstBucket();
 
     	Double value;
-        TreeMap<Double,List<SuggestPayload>> tmap = new TreeMap<Double,List<SuggestPayload>>(Collections.reverseOrder());
+		TreeMap<Double, List<Suggestable>> tmap = new TreeMap<Double, List<Suggestable>>(Collections.reverseOrder());
         
         for (Entry<T, Double> entry : scores.entrySet())
         {
-        	SuggestPayload oldsr = (SuggestPayload) entry.getKey();
-        	SuggestPayload sr = new SuggestPayload(oldsr.getSearch(), new HashMap<String,Integer>());
-        	sr.copy(oldsr);
+			T oldsr = entry.getKey();
+			Suggestable sr = oldsr.copy();
         	
         	value = entry.getValue();
         	value = (double)Math.round(value * 100) / 100;
@@ -236,12 +235,11 @@ public class Aggregator<T>
         }
 
         Double value;
-        TreeMap<Double, List<SuggestPayload>> tmap = new TreeMap<Double, List<SuggestPayload>>(Collections.reverseOrder());
+		TreeMap<Double, List<Suggestable>> tmap = new TreeMap<Double, List<Suggestable>>(Collections.reverseOrder());
 
         for (Entry<T, Double> entry : scores.entrySet()) {
-            SuggestPayload oldsr = (SuggestPayload) entry.getKey();
-            SuggestPayload sr = new SuggestPayload(oldsr.getSearch(), new HashMap<>());
-            sr.copy(oldsr);
+			T oldsr = entry.getKey();
+			Suggestable sr = oldsr.copy();
 
             value = entry.getValue();
             value = (double) Math.round(value * 100) / 100;
@@ -254,17 +252,17 @@ public class Aggregator<T>
         int st = 0;
         while (iterator.hasNext()) {
             Entry mentry = (Entry) iterator.next();
-            ArrayList<SuggestPayload> al = (ArrayList<SuggestPayload>) mentry.getValue();
+			ArrayList<Suggestable> al = (ArrayList<Suggestable>) mentry.getValue();
 
-            Map<Integer,TreeMap<Integer, List<SuggestPayload>>> tempBucket = new HashMap<>();
+			Map<Integer, TreeMap<Integer, List<Suggestable>>> tempBucket = new HashMap<>();
             for(int i=0; i<size;i++) {
-                TreeMap<Integer, List<SuggestPayload>> bucketZero = new TreeMap<Integer, List<SuggestPayload>>(Collections.reverseOrder());
+				TreeMap<Integer, List<Suggestable>> bucketZero = new TreeMap<Integer, List<Suggestable>>(Collections.reverseOrder());
                 tempBucket.put(i, bucketZero);
             }
 
             for (int i = 0; i < al.size(); i++) {
 
-                SuggestPayload sr = al.get(i);
+				Suggestable sr = al.get(i);
 
                 boolean first = same(sr, json, bucketName[0]);
                 boolean second = same(sr, json, bucketName[1]);
@@ -355,36 +353,36 @@ public class Aggregator<T>
         }
     }
 
-    private boolean same(SuggestPayload sr, SearchPayload json, String key) {
+	private boolean same(Suggestable sr, SearchPayload json, String key) {
 
-        if (!key.equals("") && sr.getFilter(key) != null && json.getBucket(key) !=null) {
-            if(Integer.parseInt(sr.getFilter(key).toString()) == json.getBucket(key).value) {
+		if (!key.equals("") && sr.getFilter().get(key) != null && json.getBucket(key) != null) {
+			if (Integer.parseInt(sr.getFilter().get(key).toString()) == json.getBucket(key).value) {
                 return true;
             }
         }
         return false;
     }
 
-    public void UpdateResults(List<T> result,Map<Integer,List<SuggestPayload>> tmap) {
+	public void UpdateResults(List<T> result, Map<Integer, List<Suggestable>> tmap) {
     	Set set = tmap.entrySet();
         Iterator iterator = set.iterator();
         while(iterator.hasNext()) {
         	Entry mentry = (Entry)iterator.next();
-        	ArrayList<SuggestPayload> al = (ArrayList<SuggestPayload>)mentry.getValue();
+			ArrayList<Suggestable> al = (ArrayList<Suggestable>) mentry.getValue();
         	for(int i=0;i<al.size();i++) {
         		result.add((T)al.get(i));
         	}
         }
     }
 
-    public <T>void UpdateMap(TreeMap<T,List<SuggestPayload>> tmap, SuggestPayload sr, T key) {
+	public <T> void UpdateMap(TreeMap<T, List<Suggestable>> tmap, Suggestable sr, T key) {
 
     	if(tmap.containsKey(key)) {
-		    List<SuggestPayload> templist =  tmap.get(key);
+			List<Suggestable> templist = tmap.get(key);
 		    boolean norecord = true;
 
-		    for (Object srt : templist.toArray()) {
-		    	SuggestPayload srs = (SuggestPayload)srt;
+			for (Suggestable srt : templist) {
+				Suggestable srs = srt;
 
                 if(sr.getSearch().equals(srs.getSearch()) || sr.getRealText().equals(srs.getRealText())) {
 		    		norecord = false;
@@ -400,7 +398,7 @@ public class Aggregator<T>
 	   }
 	   else
 	   {
-		   List<SuggestPayload> templist = new ArrayList<SuggestPayload>();
+			List<Suggestable> templist = new ArrayList<Suggestable>();
 		   templist.add(sr);
 		   tmap.put(key, templist);
 	   }

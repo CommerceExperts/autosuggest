@@ -1,23 +1,31 @@
 package com.search.suggestion.text.index;
 
+import static com.search.suggestion.common.Precondition.checkPointer;
+
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import com.search.suggestion.common.Strings;
 import com.search.suggestion.data.ScoredObject;
 import com.search.suggestion.data.SearchPayload;
 import com.search.suggestion.data.SuggestPayload;
+import com.search.suggestion.data.Suggestable;
 import com.search.suggestion.text.match.Automaton;
-
-import java.io.Serializable;
-import java.util.*;
-import java.util.Map.Entry;
-
-import static com.search.suggestion.common.Precondition.checkPointer;
 
 /**
  * Trie based implementation of the {@link FuzzyIndex} interface.
  *
  * <p>Note that this implementation is not synchronized.
  */
-public class OptimizedTrie<V> extends AbstractIndex<V> implements FuzzyIndex<V>,Serializable
+public class OptimizedTrie<V extends Suggestable> extends AbstractIndex<V> implements FuzzyIndex<V>, Serializable
 {
     private Node<V> root;
 
@@ -211,12 +219,11 @@ public class OptimizedTrie<V> extends AbstractIndex<V> implements FuzzyIndex<V>,
         Map<String, Integer> filterMap = sp.getFilter();
         for (V value : node.values())
         {
-        	SuggestPayload sr = (SuggestPayload)value;
-            Map<String, Integer> searchFilterMap = sr.getFilter();
+            Map<String, Integer> searchFilterMap = value.getFilter();
             Boolean filterPresent = false;
             Boolean allFilterPassed = true;
             for( String filter: filterMap.keySet()) {
-                if(!sr.ignoreFilter(filter)) {
+                if(!value.ignoreFilter(filter)) {
                     filterPresent = true;
                     int nodeFilterValue = 0;
                     int queryFilterValue = 0;

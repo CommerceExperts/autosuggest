@@ -1,9 +1,11 @@
 package com.search.suggestion.data;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
-public class SuggestPayload implements Indexable,Serializable
+public class SuggestPayload implements Indexable,Suggestable,Serializable
 {
     private String search;
     private int count=1;
@@ -41,6 +43,13 @@ public class SuggestPayload implements Indexable,Serializable
 		search =sr.getSearch();
 		filter = sr.getFilter();
 		realText = sr.getRealText();
+	}
+
+	@Override
+	public Suggestable copy() {
+		SuggestPayload copy = new SuggestPayload();
+		copy.copy(this);
+		return copy;
 	}
 
     private Boolean isNonZero(int i)
@@ -125,7 +134,7 @@ public class SuggestPayload implements Indexable,Serializable
 	{
     	return "search"+ getSearch()+"realText"+ getRealText();
     }
-    public Boolean ignoreFilter(String filter)
+    public boolean ignoreFilter(String filter)
     {
         /*if(filter.equals("user")) {
             return true;

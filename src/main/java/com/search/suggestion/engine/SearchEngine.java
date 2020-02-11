@@ -24,7 +24,7 @@ import com.search.suggestion.common.Aggregator;
 import com.search.suggestion.data.Indexable;
 import com.search.suggestion.data.ScoredObject;
 import com.search.suggestion.data.SearchPayload;
-import com.search.suggestion.data.SuggestPayload;
+import com.search.suggestion.data.Suggestable;
 import com.search.suggestion.text.analyze.Analyzer;
 import com.search.suggestion.text.index.Index;
 
@@ -32,10 +32,10 @@ import com.search.suggestion.text.index.Index;
 /**
  * Facade for indexing and searching {@link Indexable} elements.
  */
-public final class SearchEngine<T extends Indexable> implements Serializable
+public final class SearchEngine<T extends Suggestable> implements Serializable
 {
     private final Analyzer analyzer;
-    private final Comparator<ScoredObject<T>> comparator;
+	private final Comparator<ScoredObject<T>>	comparator;
     private IndexAdapter<T> index;
     private final Lock read;
     private final Lock write;
@@ -121,7 +121,7 @@ public final class SearchEngine<T extends Indexable> implements Serializable
 				.orElse(false);
 	}
 
-    public TreeMap <Double,List<SuggestPayload>> search(SearchPayload sr, boolean val)
+	public TreeMap<Double, List<Suggestable>> search(SearchPayload sr, boolean val)
     {
         checkPointer(sr != null);
         String query = sr.getSearch();
@@ -130,7 +130,7 @@ public final class SearchEngine<T extends Indexable> implements Serializable
         read.lock();
         try
         {
-            Aggregator<T> aggregator = new Aggregator<>(comparator);
+			Aggregator<T> aggregator = new Aggregator<>(comparator);
             Iterator<String> tokens = analyzer.apply(query).iterator();
             if (tokens.hasNext())
             {
@@ -197,7 +197,7 @@ public final class SearchEngine<T extends Indexable> implements Serializable
     /**
      * Builder for constructing {@link SearchEngine} instances.
      */
-    public static class Builder<T extends Indexable>
+	public static class Builder<T extends Suggestable>
     {
         private Analyzer analyzer;
         private Comparator<ScoredObject<T>> comparator;
