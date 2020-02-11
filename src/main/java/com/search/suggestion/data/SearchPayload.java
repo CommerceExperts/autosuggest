@@ -11,7 +11,7 @@ public class SearchPayload implements Indexable,Serializable
     private  Boolean isapprox;
 
 	private Map<String, Integer> filter;
-	private Map<String, Map<String,Integer>> bucket;
+	private Map<String, Bucket> bucket;
 	private int limit;
 
 	private String realText;
@@ -27,11 +27,11 @@ public class SearchPayload implements Indexable,Serializable
         this.isapprox = false;
     }
 
-	public Map<String, Map<String,Integer>> getBucket() {
+	public Map<String, Bucket> getBucket() {
 		return bucket;
 	}
 
-	public void setBucket(Map<String, Map<String,Integer>> bucket) {
+	public void setBucket(Map<String, Bucket> bucket) {
 		this.bucket = bucket;
 	}
 
@@ -49,17 +49,12 @@ public class SearchPayload implements Indexable,Serializable
 	public Integer getFilter(String name) {
 		return filter.get(name);
 	}
-	public Map<String,Integer> getBucket(String name) {
+	public Bucket getBucket(String name) {
 	    return bucket.get(name);
     }
+	
     public String getFirstBucket() {
-		String name = "";
-		for (Map.Entry<String, Map<String,Integer>> entry : bucket.entrySet())
-		{
-			name = entry.getKey();
-		}
-		return name;
-
+		return bucket.keySet().iterator().next();
 	}
 
 	public void setFilter(Map<String, Integer> filter) {

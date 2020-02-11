@@ -1,13 +1,27 @@
 package com.search.suggestion.common;
 
+import static com.search.suggestion.common.Precondition.checkPointer;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+
+import javax.annotation.Nullable;
+
+import com.search.suggestion.data.Bucket;
 import com.search.suggestion.data.ScoredObject;
 import com.search.suggestion.data.SearchPayload;
 import com.search.suggestion.data.SuggestPayload;
-
-import javax.annotation.Nullable;
-import java.util.*;
-import java.util.Map.Entry;
-import static com.search.suggestion.common.Precondition.checkPointer;
 
 /**
  * Aggregator to collect, merge and transform {@link ScoredObject} elements.
@@ -182,10 +196,9 @@ public class Aggregator<T>
         int maxBucketSize = 3;
         ArrayList<ArrayList<T>> bucketList = new ArrayList<>();
 
-        Map<String, Map<String, Integer>> bucket = json.getBucket();
+		Map<String, Bucket> buckets = json.getBucket();
 
-
-        int bucketSize = bucket.size();
+		int bucketSize = buckets.size();
         String bucketName[];
         int bucketValue[];
         int bucketWeight[];
@@ -213,11 +226,11 @@ public class Aggregator<T>
             bucketList.add(arrayListWithBucket);
         }
         int start = 0;
-        if (bucket.size() > 0) {
-            for (Entry<String, Map<String, Integer>> entry : bucket.entrySet()) {
+		if (buckets.size() > 0) {
+			for (Entry<String, Bucket> entry : buckets.entrySet()) {
                 bucketName[start]   = entry.getKey();
-                bucketValue[start]  = entry.getValue().get("value");
-                bucketWeight[start] = entry.getValue().get("weight");
+                bucketValue[start]  = entry.getValue().value;
+                bucketWeight[start] = entry.getValue().weight;
                 start++;
             }
         }
@@ -345,7 +358,7 @@ public class Aggregator<T>
     private boolean same(SuggestPayload sr, SearchPayload json, String key) {
 
         if (!key.equals("") && sr.getFilter(key) != null && json.getBucket(key) !=null) {
-            if(Integer.parseInt(sr.getFilter(key).toString()) == Integer.parseInt(json.getBucket(key).get("value").toString())) {
+            if(Integer.parseInt(sr.getFilter(key).toString()) == json.getBucket(key).value) {
                 return true;
             }
         }
