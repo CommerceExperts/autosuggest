@@ -161,7 +161,6 @@ public final class SearchEngine<T extends Suggestable> implements Serializable
     {
         checkPointer(searchPayload != null);
         String query = searchPayload.getSearch();
-        System.out.println(query);
 
         checkPointer(query != null);
         read.lock();
