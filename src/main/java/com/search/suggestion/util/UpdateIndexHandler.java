@@ -1,21 +1,21 @@
 package com.search.suggestion.util;
 
-import com.google.gson.Gson;
-import com.search.suggestion.data.RawResponse;
-import com.search.suggestion.data.RawSearchUpdateRequest;
-import com.search.suggestion.interfaces.ServerInterface;
-import com.search.suggestion.text.backup.DumpData;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
+
+import com.search.suggestion.data.RawResponse;
+import com.search.suggestion.data.RawSearchUpdateRequest;
+import com.search.suggestion.interfaces.ServerInterface;
+import com.search.suggestion.text.backup.DumpData;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 
 public class UpdateIndexHandler implements HttpHandler {
     private final ServerInterface server;
@@ -45,8 +45,8 @@ public class UpdateIndexHandler implements HttpHandler {
         RawResponse rawResponse = new RawResponse();
         List<RawResponse> list = new ArrayList<RawResponse>();
 
+        ObjectMapper objectMapper = new ObjectMapper();
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
 
             rawRequest = objectMapper.readValue(query, RawSearchUpdateRequest.class);
         }
@@ -63,7 +63,7 @@ public class UpdateIndexHandler implements HttpHandler {
         }
 
         // send response
-        String response = new Gson().toJson(list);
+        String response = objectMapper.writeValueAsString(list);
         httpExchange.sendResponseHeaders(200, response.length());
         OutputStream os = httpExchange.getResponseBody();
         os.write(response.toString().getBytes());

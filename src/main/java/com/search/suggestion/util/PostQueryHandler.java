@@ -1,24 +1,20 @@
 package com.search.suggestion.util;
 
-import com.google.gson.Gson;
-import com.search.suggestion.data.RawResponse;
-import com.search.suggestion.data.RawSeachRequest;
-import com.search.suggestion.interfaces.ServerInterface;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import org.apache.http.HttpHeaders;
-import org.apache.http.protocol.HTTP;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
+
+import com.search.suggestion.data.RawResponse;
+import com.search.suggestion.data.RawSeachRequest;
+import com.search.suggestion.interfaces.ServerInterface;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 
 /**
  * Created by nikhil on 30/7/17.
@@ -56,9 +52,8 @@ public class PostQueryHandler implements HttpHandler {
         RawSeachRequest rawRequest  = null;
         RawResponse rawResponse = new RawResponse();
         List<RawResponse> list = new ArrayList<RawResponse>();
+        ObjectMapper objectMapper = new ObjectMapper();
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
-
             rawRequest = objectMapper.readValue(query, RawSeachRequest.class);
             rawRequest.setQuery(stopWords.removeStopWords(rawRequest.getQuery()));
         }
@@ -76,7 +71,7 @@ public class PostQueryHandler implements HttpHandler {
                 list = server.getResponse(rawRequest);
         }
 
-        String response = new Gson().toJson(list);
+        String response = objectMapper.writeValueAsString(list);
         httpExchange.getResponseHeaders().add("Content-Type", "application/json; charset=UTF-8");
         httpExchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
         httpExchange.sendResponseHeaders(200, response.length());

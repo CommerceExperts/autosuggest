@@ -1,15 +1,21 @@
 package com.search.suggestion.util;
 
-import com.google.gson.Gson;
-import com.search.suggestion.data.RawResponse;
-import com.search.suggestion.data.RawSearchUpdateRequest;
-import com.search.suggestion.interfaces.ServerInterface;
-import org.codehaus.jackson.map.ObjectMapper;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
+
+import org.codehaus.jackson.map.ObjectMapper;
+
+import com.search.suggestion.data.RawResponse;
+import com.search.suggestion.data.RawSearchUpdateRequest;
+import com.search.suggestion.interfaces.ServerInterface;
 
 /**
  * Created by nikhil on 29/7/17.
@@ -39,45 +45,27 @@ public class InputOutputStream implements Runnable{
             InputStream is = socket.getInputStream();
             InputStreamReader isr = new InputStreamReader(is);
             BufferedReader br = new BufferedReader(isr);
-            StringBuilder out = new StringBuilder();
-            String line;
             String input = "";
 
             input = br.readLine();
 
-            BufferedWriter bw  =null;
-            OutputStreamWriter osw = null;
-            OutputStream os =null;
-            try {
+            try (OutputStream os = socket.getOutputStream()){
 
                 ObjectMapper objectMapper = new ObjectMapper();
                 RawSearchUpdateRequest rawRequest = objectMapper.readValue(input, RawSearchUpdateRequest.class);
 
-                os = socket.getOutputStream();
-                osw = new OutputStreamWriter(os);
-                bw = new BufferedWriter(osw);
                 List<RawResponse> list = this.server.getResponse(rawRequest);
-                String gson = new Gson().toJson(list);
-                bw.write(gson);
-                bw.flush();
-                bw.close();
+                objectMapper.writeValue(os, list);
 
             } catch(Exception e) {
 
                 e.printStackTrace();
-                if(bw !=null) {
-                    bw.write("Server Error");
-                    bw.flush();
-                    bw.close();
-                }
-                if(bw == null) {
-                    os = socket.getOutputStream();
-                    osw = new OutputStreamWriter(os);
-                    bw = new BufferedWriter(osw);
-                    bw.write("Server Error");
-                    bw.flush();
-                    bw.close();
-                }
+                OutputStream os = socket.getOutputStream();
+                OutputStreamWriter osw = new OutputStreamWriter(os);
+                BufferedWriter bw = new BufferedWriter(osw);
+                bw.write("Server Error");
+                bw.flush();
+                bw.close();
 
             }
 
